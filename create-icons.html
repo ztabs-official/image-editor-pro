@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>Chrome Extension Icon Generator</h1>
+    <p>This will generate placeholder icons for the Image Editor Pro extension.</p>
+    
+    <script>
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#1d4ed8');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Icon shape (camera/image icon)
+            ctx.fillStyle = 'white';
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const iconSize = size * 0.6;
+            
+            // Simple camera icon
+            ctx.fillRect(centerX - iconSize/2, centerY - iconSize/3, iconSize, iconSize * 0.6);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(centerX - iconSize/3, centerY - iconSize/6, iconSize * 0.6, iconSize * 0.3);
+            
+            // Download the icon
+            const link = document.createElement('a');
+            link.download = `icon${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate all required icon sizes
+        [16, 32, 48, 128].forEach(size => {
+            setTimeout(() => createIcon(size), size * 10);
+        });
+        
+        document.body.innerHTML += '<p>Icons generated! Check your downloads folder.</p>';
+    </script>
+</body>
+</html> 

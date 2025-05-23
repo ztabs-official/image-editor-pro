@@ -1,0 +1,20 @@
+/* Content script styles for Image Editor Pro */
+
+.image-editor-overlay {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  pointer-events: none;
+  z-index: 10000;
+  display: none;
+  transition: opacity 0.2s ease;
+}
+
+.image-editor-highlight {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+} 
