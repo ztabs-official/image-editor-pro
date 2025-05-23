@@ -33,7 +33,8 @@ import {
   Camera,
   Music,
   Eye,
-  Target
+  Target,
+  MousePointer
 } from 'lucide-react';
 import Konva from 'konva';
 
@@ -81,6 +82,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
   const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'webp'>('png');
   const [jpegQuality, setJpegQuality] = useState(0.8);
+  const [resizeWidth, setResizeWidth] = useState(800);
+  const [resizeHeight, setResizeHeight] = useState(600);
+  const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
   
   const [filters, setFilters] = useState<FilterValues>({
     brightness: 0,
@@ -123,6 +127,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       setStageSize({ width, height });
       setImageSize({ width: img.width, height: img.height });
+      
+      // Set initial resize values to current display size
+      setResizeWidth(Math.round(width));
+      setResizeHeight(Math.round(height));
     };
   }, [imageSrc]);
 
@@ -735,6 +743,110 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
     }
   };
 
+  const applyResize = () => {
+    if (!image || !stageRef.current || !imageRef.current) return;
+    
+    console.log('Applying resize to:', { width: resizeWidth, height: resizeHeight });
+    
+    // Detach transformer
+    if (transformerRef.current) {
+      transformerRef.current.nodes([]);
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+    setSelectedId(null);
+    
+    // Create a canvas to resize the image
+    const canvas = document.createElement('canvas');
+    canvas.width = resizeWidth;
+    canvas.height = resizeHeight;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      console.error('Could not get canvas context for resize');
+      return;
+    }
+    
+    // Get current stage content
+    const stage = stageRef.current;
+    const stageCanvas = stage.toCanvas();
+    
+    // Draw resized image
+    ctx.drawImage(stageCanvas, 0, 0, stageSize.width, stageSize.height, 0, 0, resizeWidth, resizeHeight);
+    
+    // Create new image from resized canvas
+    const dataURL = canvas.toDataURL('image/png');
+    const newImg = new Image();
+    
+    newImg.onload = () => {
+      console.log('Resized image loaded:', newImg.width, 'x', newImg.height);
+      
+      setImage(newImg);
+      setStageSize({ width: resizeWidth, height: resizeHeight });
+      setImageSize({ width: resizeWidth, height: resizeHeight });
+      
+      // Clear shapes since they need to be repositioned
+      const layer = layerRef.current;
+      if (layer) {
+        const shapesToRemove = layer.children?.filter(child => 
+          child !== imageRef.current && child.className !== 'Transformer'
+        ) || [];
+        
+        shapesToRemove.forEach(shape => shape.remove());
+        setShapes([]);
+        layer.batchDraw();
+      }
+      
+      console.log('Resize applied successfully');
+    };
+    
+    newImg.onerror = () => {
+      console.error('Failed to load resized image');
+    };
+    
+    newImg.src = dataURL;
+  };
+
+  const handleResizeWidthChange = (value: string) => {
+    const width = parseInt(value) || 0;
+    setResizeWidth(width);
+    
+    if (maintainAspectRatio && image) {
+      const aspectRatio = image.width / image.height;
+      const newHeight = Math.round(width / aspectRatio);
+      setResizeHeight(newHeight);
+    }
+  };
+
+  const handleResizeHeightChange = (value: string) => {
+    const height = parseInt(value) || 0;
+    setResizeHeight(height);
+    
+    if (maintainAspectRatio && image) {
+      const aspectRatio = image.width / image.height;
+      const newWidth = Math.round(height * aspectRatio);
+      setResizeWidth(newWidth);
+    }
+  };
+
+  const resetToOriginalSize = () => {
+    if (image) {
+      const aspectRatio = image.width / image.height;
+      const maxWidth = 800;
+      const maxHeight = 600;
+      
+      let width = maxWidth;
+      let height = maxWidth / aspectRatio;
+      
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = maxHeight * aspectRatio;
+      }
+      
+      setResizeWidth(Math.round(width));
+      setResizeHeight(Math.round(height));
+    }
+  };
+
   const deleteSelected = () => {
     if (selectedId) {
       const node = stageRef.current?.findOne(`#${selectedId}`);
@@ -1005,13 +1117,21 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
               </TabsContent>
               
               <TabsContent value="tools" className="space-y-4">
+                <div className="text-xs text-muted-foreground mb-3 p-2 bg-blue-50 rounded border">
+                  <p className="font-medium text-blue-700 mb-1">💡 Tool Guide:</p>
+                  <p><strong>Select:</strong> Click shapes to select, resize, move, or delete them</p>
+                  <p><strong>Brush:</strong> Draw freehand lines and drawings</p>
+                  <p><strong>Text:</strong> Add text (double-click to edit after placing)</p>
+                  <p><strong>Crop:</strong> Select an area to crop the image</p>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant={tool === 'select' ? 'default' : 'outline'}
                     onClick={() => setTool('select')}
                     className="h-12"
                   >
-                    <Palette className="h-4 w-4 mr-2" />
+                    <MousePointer className="h-4 w-4 mr-2" />
                     Select
                   </Button>
                   
@@ -1218,6 +1338,72 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
                     <FlipVertical className="h-4 w-4 mr-2" />
                     Flip V
                   </Button>
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Resize Image</h3>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Width</label>
+                      <input
+                        type="number"
+                        value={resizeWidth}
+                        onChange={(e) => handleResizeWidthChange(e.target.value)}
+                        className="w-full px-2 py-1 text-sm border rounded"
+                        min="1"
+                        max="5000"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Height</label>
+                      <input
+                        type="number"
+                        value={resizeHeight}
+                        onChange={(e) => handleResizeHeightChange(e.target.value)}
+                        className="w-full px-2 py-1 text-sm border rounded"
+                        min="1"
+                        max="5000"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="aspect-ratio"
+                      checked={maintainAspectRatio}
+                      onChange={(e) => setMaintainAspectRatio(e.target.checked)}
+                      className="rounded"
+                    />
+                    <label htmlFor="aspect-ratio" className="text-xs text-muted-foreground">
+                      Maintain aspect ratio
+                    </label>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      onClick={applyResize} 
+                      variant="default" 
+                      className="text-xs"
+                      disabled={resizeWidth < 1 || resizeHeight < 1}
+                    >
+                      Apply Resize
+                    </Button>
+                    <Button 
+                      onClick={resetToOriginalSize} 
+                      variant="outline" 
+                      className="text-xs"
+                    >
+                      Reset Size
+                    </Button>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    Current: {Math.round(stageSize.width)} × {Math.round(stageSize.height)}px
+                  </div>
                 </div>
               </TabsContent>
               
