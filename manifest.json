@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Image Editor Pro",
   "version": "1.0.0",
-  "description": "A beautiful and powerful image editor for Chrome with advanced editing capabilities including filters, cropping, drawing tools, and more",
+  "description": "A beautiful and powerful image editor for Chrome with advanced editing capabilities including filters, cropping, and more",
   "icons": {
     "16": "icons/icon16.svg",
     "32": "icons/icon32.svg",
