@@ -22,7 +22,7 @@ function createImageOverlay(): HTMLDivElement {
   return overlay;
 }
 
-function showImageOverlay(img: HTMLImageElement, event: MouseEvent) {
+function showImageOverlay(img: HTMLImageElement, _event: MouseEvent) {
   if (!imageOverlay) {
     imageOverlay = createImageOverlay();
   }
@@ -113,7 +113,7 @@ observer.observe(document.body, {
 });
 
 // Listen for messages from background script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'getPageImages') {
     const images = Array.from(document.querySelectorAll('img'));
     const imageData = images

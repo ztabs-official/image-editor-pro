@@ -27,6 +27,7 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "*.ts", "*.tsx"],
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "*.config.*", "build-extension.js", "create-production-icons.cjs"],
   "references": [{ "path": "./tsconfig.node.json" }]
 } 

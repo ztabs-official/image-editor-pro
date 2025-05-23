@@ -1,6 +1,28 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <rect width="16" height="16" fill="#3b82f6"/>
-  <rect x="3.2" y="3.2" width="9.6" height="6.4" fill="white"/>
-  <rect x="4" y="4" width="8" height="4.8" fill="#3b82f6"/>
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="8" cy="8" r="6" fill="url(#bg)" stroke="none"/>
+  
+  <!-- Photo frame -->
+  <rect x="3.2" y="4" width="9.6" height="7.2" rx="2" fill="url(#icon)" stroke="none"/>
+  
+  <!-- Image mountains -->
+  <polygon points="4,8.8 5.6,6.4 7.2,8 8.8,5.6 12,8.8" fill="#3b82f6" opacity="0.8"/>
+  
+  <!-- Sun -->
+  <circle cx="10.4" cy="5.6" r="0.8" fill="#fbbf24"/>
+  
+  <!-- Edit tools indicator -->
+  <circle cx="12" cy="12" r="1.28" fill="#ef4444"/>
+  <rect x="11.52" y="11.52" width="0.96" height="0.96" fill="white" rx="1"/>
 </svg>

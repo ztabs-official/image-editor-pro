@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Stage, Layer, Image as KonvaImage, Transformer, Rect, Text, Circle, Line } from 'react-konva';
+import React, { useState, useRef, useEffect } from 'react';
+import { Stage, Layer, Image as KonvaImage, Transformer, Rect } from 'react-konva';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -10,13 +10,10 @@ import {
   RotateCcw, 
   RotateCw, 
   Crop, 
-  Palette, 
   Type, 
   Brush, 
   Circle as CircleIcon,
   Square,
-  Undo,
-  Redo,
   ZoomIn,
   ZoomOut,
   FlipHorizontal,
@@ -25,15 +22,7 @@ import {
   Trash2,
   Triangle,
   Star,
-  Heart,
   ArrowRight,
-  Smile,
-  Sun,
-  Zap,
-  Camera,
-  Music,
-  Eye,
-  Target,
   MousePointer
 } from 'lucide-react';
 import Konva from 'konva';
@@ -56,28 +45,17 @@ interface FilterValues {
   opacity: number;
 }
 
-interface Shape {
-  id: string;
-  type: 'line' | 'text' | 'rect' | 'circle' | 'triangle' | 'star' | 'arrow' | 'heart' | 'icon';
-  props: any;
-}
-
 const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
-  const [imageSize, setImageSize] = useState({ width: 800, height: 600 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
-  const [history, setHistory] = useState<string[]>([]);
-  const [historyStep, setHistoryStep] = useState(-1);
   const [activeTab, setActiveTab] = useState('filters');
   const [tool, setTool] = useState<'select' | 'brush' | 'text' | 'rect' | 'circle' | 'crop'>('select');
   const [brushSize, setBrushSize] = useState(5);
   const [brushColor, setBrushColor] = useState('#000000');
   const [isDrawing, setIsDrawing] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
-  const [shapes, setShapes] = useState<Shape[]>([]);
-  const [rotation, setRotation] = useState(0);
   const [cropMode, setCropMode] = useState(false);
   const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'webp'>('png');
@@ -126,7 +104,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       }
       
       setStageSize({ width, height });
-      setImageSize({ width: img.width, height: img.height });
       
       // Set initial resize values to current display size
       setResizeWidth(Math.round(width));
@@ -179,6 +156,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
     }
   }, [filters]);
 
+  // Center and position image when loaded
+  useEffect(() => {
+    if (imageRef.current && image) {
+      // Set up image for proper transforms
+      imageRef.current.offsetX(imageRef.current.width() / 2);
+      imageRef.current.offsetY(imageRef.current.height() / 2);
+      imageRef.current.x(stageSize.width / 2);
+      imageRef.current.y(stageSize.height / 2);
+      layerRef.current?.batchDraw();
+    }
+  }, [image, stageSize]);
+
   const handleFilterChange = (filterName: keyof FilterValues, value: number[]) => {
     setFilters(prev => ({
       ...prev,
@@ -205,8 +194,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
     if (imageRef.current) {
       const currentRotation = imageRef.current.rotation();
       const newRotation = currentRotation + (direction === 'right' ? 90 : -90);
+      
+      // Set rotation around center
       imageRef.current.rotation(newRotation);
-      setRotation(newRotation);
+      imageRef.current.offsetX(imageRef.current.width() / 2);
+      imageRef.current.offsetY(imageRef.current.height() / 2);
+      imageRef.current.x(stageSize.width / 2);
+      imageRef.current.y(stageSize.height / 2);
+      
       layerRef.current?.batchDraw();
     }
   };
@@ -214,9 +209,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
   const flipImage = (direction: 'horizontal' | 'vertical') => {
     if (imageRef.current) {
       if (direction === 'horizontal') {
-        imageRef.current.scaleX(imageRef.current.scaleX() * -1);
+        const currentScaleX = imageRef.current.scaleX();
+        imageRef.current.scaleX(currentScaleX * -1);
+        // Adjust position to keep image centered
+        imageRef.current.offsetX(imageRef.current.width() / 2);
+        imageRef.current.x(stageSize.width / 2);
       } else {
-        imageRef.current.scaleY(imageRef.current.scaleY() * -1);
+        const currentScaleY = imageRef.current.scaleY();
+        imageRef.current.scaleY(currentScaleY * -1);
+        // Adjust position to keep image centered
+        imageRef.current.offsetY(imageRef.current.height() / 2);
+        imageRef.current.y(stageSize.height / 2);
       }
       layerRef.current?.batchDraw();
     }
@@ -246,11 +249,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current?.add(newLine);
       currentPath.current = newLine;
-      setShapes(prev => [...prev, {
-        id: newLine.id(),
-        type: 'line',
-        props: newLine.attrs
-      }]);
     } else if (tool === 'crop') {
       setIsCropping(true);
       const pos = e.target.getStage().getPointerPosition();
@@ -260,7 +258,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         width: 0,
         height: 0
       };
-      console.log('Starting crop at:', newCropRect);
       setCropRect(newCropRect);
     } else {
       // Selection mode
@@ -288,7 +285,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         width: point.x - cropRect.x,
         height: point.y - cropRect.y
       };
-      console.log('Updating crop rect:', newCropRect);
       setCropRect(newCropRect);
     }
   };
@@ -303,8 +299,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
     if (canvasContainerRef.current && stageRef.current) {
       const container = canvasContainerRef.current;
       const containerRect = container.getBoundingClientRect();
-      const stage = stageRef.current;
-      const stagePosition = stage.position();
       
       return {
         x: containerRect.left + (container.offsetWidth - stageSize.width * scale) / 2,
@@ -388,11 +382,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(textNode);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: textNode.id(),
-        type: 'text',
-        props: textNode.attrs
-      }]);
     }
   };
 
@@ -412,11 +401,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(rect);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: rect.id(),
-        type: 'rect',
-        props: rect.attrs
-      }]);
     }
   };
 
@@ -435,11 +419,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(circle);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: circle.id(),
-        type: 'circle',
-        props: circle.attrs
-      }]);
     }
   };
 
@@ -459,11 +438,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(triangle);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: triangle.id(),
-        type: 'triangle',
-        props: triangle.attrs
-      }]);
     }
   };
 
@@ -484,11 +458,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(star);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: star.id(),
-        type: 'star',
-        props: star.attrs
-      }]);
     }
   };
 
@@ -509,36 +478,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(arrow);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: arrow.id(),
-        type: 'arrow',
-        props: arrow.attrs
-      }]);
-    }
-  };
-
-  const addHeart = () => {
-    if (layerRef.current) {
-      // Create heart shape using path
-      const heart = new Konva.Path({
-        x: 100,
-        y: 100,
-        data: 'M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5 C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3 C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z',
-        fill: brushColor,
-        stroke: brushColor,
-        strokeWidth: brushSize,
-        scale: { x: 2, y: 2 },
-        draggable: true,
-        id: `heart-${Date.now()}`
-      });
-      
-      layerRef.current.add(heart);
-      layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: heart.id(),
-        type: 'heart',
-        props: heart.attrs
-      }]);
     }
   };
 
@@ -568,36 +507,16 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       
       layerRef.current.add(icon);
       layerRef.current.batchDraw();
-      setShapes(prev => [...prev, {
-        id: icon.id(),
-        type: 'icon',
-        props: icon.attrs
-      }]);
     }
   };
 
   const applyCrop = () => {
-    console.log('APPLY CROP CALLED!');
-    console.log('cropRect:', cropRect);
-    console.log('stageRef.current:', !!stageRef.current);
-    console.log('imageRef.current:', !!imageRef.current);
-    console.log('image:', !!image);
-    console.log('cropRect conditions:', cropRect && cropRect.width > 0 && cropRect.height > 0);
-    
     if (cropRect && stageRef.current && imageRef.current && image && cropRect.width > 0 && cropRect.height > 0) {
-      console.log('=== CROP DEBUG START ===');
-      
       // Ensure positive dimensions
       const x = cropRect.width < 0 ? cropRect.x + cropRect.width : cropRect.x;
       const y = cropRect.height < 0 ? cropRect.y + cropRect.height : cropRect.y;
       const width = Math.abs(cropRect.width);
       const height = Math.abs(cropRect.height);
-      
-      console.log('Crop rect:', cropRect);
-      console.log('Normalized crop:', { x, y, width, height });
-      console.log('Stage size:', stageSize);
-      console.log('Image size:', imageSize);
-      console.log('Original image:', { width: image.width, height: image.height });
       
       // Detach transformer
       if (transformerRef.current) {
@@ -609,10 +528,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       const stage = stageRef.current;
       const layer = layerRef.current;
       
-      if (!layer) {
-        console.error('No layer found');
-        return;
-      }
+      if (!layer) return;
       
       // Find and temporarily hide overlay elements
       const overlays = layer.children?.filter(child => 
@@ -621,22 +537,15 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         (child.className === 'Rect' && child.attrs.globalCompositeOperation === 'destination-out')
       ) || [];
       
-      console.log('Found overlays to hide:', overlays.length);
-      
       // Hide overlays
-      overlays.forEach(overlay => {
-        overlay.visible(false);
-      });
+      overlays.forEach(overlay => overlay.visible(false));
       layer.batchDraw();
       
       // Wait for render, then capture
       setTimeout(() => {
         try {
-          console.log('Capturing stage...');
-          
-          // Method 1: Try stage.toCanvas() 
+          // Try stage.toCanvas() 
           const stageCanvas = stage.toCanvas();
-          console.log('Stage canvas created:', stageCanvas.width, 'x', stageCanvas.height);
           
           // Create crop canvas
           const cropCanvas = document.createElement('canvas');
@@ -644,56 +553,28 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
           cropCanvas.height = height;
           const ctx = cropCanvas.getContext('2d');
           
-          if (!ctx) {
-            console.error('Could not get crop canvas context');
-            return;
-          }
+          if (!ctx) return;
           
           // Draw cropped area
-          console.log('Drawing crop area...');
-          ctx.drawImage(
-            stageCanvas,
-            x, y, width, height,  // source
-            0, 0, width, height   // destination
-          );
+          ctx.drawImage(stageCanvas, x, y, width, height, 0, 0, width, height);
           
           // Check if we got any pixels
           const imageData = ctx.getImageData(0, 0, width, height);
           const hasPixels = imageData.data.some(pixel => pixel !== 0);
-          console.log('Crop has pixels:', hasPixels);
-          console.log('ImageData length:', imageData.data.length);
           
           if (!hasPixels) {
-            console.error('Crop area is empty! Trying alternative method...');
-            
             // Alternative: Get image data directly from image node
-            const imageNode = imageRef.current;
-            
-            // Calculate scale factors
             const scaleX = image.width / stageSize.width;
             const scaleY = image.height / stageSize.height;
             
-            console.log('Scale factors:', { scaleX, scaleY });
-            
             // Draw original image with crop
             ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(
-              image,
-              x * scaleX, y * scaleY, width * scaleX, height * scaleY,  // source from original
-              0, 0, width, height  // destination
-            );
-            
-            // Check again
-            const imageData2 = ctx.getImageData(0, 0, width, height);
-            const hasPixels2 = imageData2.data.some(pixel => pixel !== 0);
-            console.log('Alternative method has pixels:', hasPixels2);
+            ctx.drawImage(image, x * scaleX, y * scaleY, width * scaleX, height * scaleY, 0, 0, width, height);
           }
           
           const dataURL = cropCanvas.toDataURL('image/png');
-          console.log('Generated dataURL length:', dataURL.length);
           
           if (dataURL.length < 100) {
-            console.error('DataURL too short, likely empty');
             // Restore overlays
             overlays.forEach(overlay => overlay.visible(true));
             layer.batchDraw();
@@ -703,11 +584,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
           // Create new image
           const newImg = new Image();
           newImg.onload = () => {
-            console.log('New image loaded successfully:', newImg.width, 'x', newImg.height);
-            
             setImage(newImg);
             setStageSize({ width, height });
-            setImageSize({ width, height });
             setCropMode(false);
             setCropRect(null);
             setTool('select');
@@ -718,14 +596,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
             ) || [];
             
             shapesToRemove.forEach(shape => shape.remove());
-            setShapes([]);
             layer.batchDraw();
-            
-            console.log('=== CROP SUCCESS ===');
           };
           
-          newImg.onerror = (err) => {
-            console.error('Failed to load new image:', err);
+          newImg.onerror = () => {
             // Restore overlays
             overlays.forEach(overlay => overlay.visible(true));
             layer.batchDraw();
@@ -734,7 +608,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
           newImg.src = dataURL;
           
         } catch (error) {
-          console.error('Crop failed:', error);
           // Restore overlays
           overlays.forEach(overlay => overlay.visible(true));
           layer.batchDraw();
@@ -745,8 +618,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
 
   const applyResize = () => {
     if (!image || !stageRef.current || !imageRef.current) return;
-    
-    console.log('Applying resize to:', { width: resizeWidth, height: resizeHeight });
     
     // Detach transformer
     if (transformerRef.current) {
@@ -761,10 +632,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
     canvas.height = resizeHeight;
     const ctx = canvas.getContext('2d');
     
-    if (!ctx) {
-      console.error('Could not get canvas context for resize');
-      return;
-    }
+    if (!ctx) return;
     
     // Get current stage content
     const stage = stageRef.current;
@@ -778,11 +646,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
     const newImg = new Image();
     
     newImg.onload = () => {
-      console.log('Resized image loaded:', newImg.width, 'x', newImg.height);
-      
       setImage(newImg);
       setStageSize({ width: resizeWidth, height: resizeHeight });
-      setImageSize({ width: resizeWidth, height: resizeHeight });
       
       // Clear shapes since they need to be repositioned
       const layer = layerRef.current;
@@ -792,15 +657,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         ) || [];
         
         shapesToRemove.forEach(shape => shape.remove());
-        setShapes([]);
         layer.batchDraw();
       }
-      
-      console.log('Resize applied successfully');
-    };
-    
-    newImg.onerror = () => {
-      console.error('Failed to load resized image');
     };
     
     newImg.src = dataURL;
@@ -859,7 +717,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         
         // Remove the node
         node.remove();
-        setShapes(prev => prev.filter(shape => shape.id !== selectedId));
         setSelectedId(null);
         layerRef.current?.batchDraw();
       }
@@ -868,30 +725,242 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
 
   const downloadEditedImage = () => {
     if (stageRef.current) {
-      let mimeType = 'image/png';
-      let quality = undefined;
+      console.log(`🔍 Attempting ${exportFormat.toUpperCase()} export...`);
       
-      if (exportFormat === 'jpeg') {
-        mimeType = 'image/jpeg';
-        quality = jpegQuality;
+      // Helper function to get actual format from dataURL
+      const getActualFormat = (dataURL: string): string => {
+        if (dataURL.startsWith('data:image/webp')) return 'webp';
+        if (dataURL.startsWith('data:image/jpeg')) return 'jpeg';
+        if (dataURL.startsWith('data:image/jpg')) return 'jpg';
+        return 'png'; // default fallback
+      };
+
+      // Helper function to download file with correct extension
+      const downloadFile = (dataURL: string, requestedFormat: string) => {
+        const actualFormat = getActualFormat(dataURL);
+        const fileExtension = actualFormat === 'jpeg' ? 'jpg' : actualFormat;
+        
+        console.log(`📤 Export result: Requested ${requestedFormat}, got ${actualFormat}`);
+        console.log(`📁 File extension: .${fileExtension}`);
+        
+        if (onSave) {
+          // Create a custom download with correct extension even when onSave is provided
+          const link = document.createElement('a');
+          link.download = `edited-image.${fileExtension}`;
+          link.href = dataURL;
+          link.click();
+          
+          // Also call the onSave callback for gallery storage
+          onSave(dataURL);
+        } else {
+          const link = document.createElement('a');
+          link.download = `edited-image.${fileExtension}`;
+          link.href = dataURL;
+          link.click();
+        }
+
+        // Notify user if format was changed (but not for jpeg/jpg equivalence)
+        if (requestedFormat !== actualFormat && !(requestedFormat === 'jpeg' && actualFormat === 'jpeg')) {
+          alert(`${requestedFormat.toUpperCase()} format not fully supported. Downloaded as ${actualFormat.toUpperCase()} instead.`);
+        }
+      };
+
+      // Enhanced WebP support detection - multiple methods
+      const testWebPSupport = (): Promise<boolean> => {
+        return new Promise((resolve) => {
+          console.log('🧪 Testing WebP support with multiple methods...');
+          
+          // Method 1: Feature detection
+          const hasWebPSupport = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return false;
+            
+            // Draw something
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(0, 0, 1, 1);
+            
+            try {
+              const webpData = canvas.toDataURL('image/webp', 0.8);
+              return webpData.startsWith('data:image/webp') && webpData.length > 50;
+            } catch (e) {
+              return false;
+            }
+          };
+          
+          // Method 2: More comprehensive test with real image data
+          const testWithRealData = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 10;
+            canvas.height = 10;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return false;
+            
+            // Create a more complex pattern
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(0, 0, 5, 5);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(5, 0, 5, 5);
+            ctx.fillStyle = '#0000ff';
+            ctx.fillRect(0, 5, 5, 5);
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(5, 5, 5, 5);
+            
+            try {
+              const webpData = canvas.toDataURL('image/webp', 0.9);
+              const pngData = canvas.toDataURL('image/png');
+              
+              console.log(`📊 WebP test data: ${webpData.substring(0, 40)}...`);
+              console.log(`📊 WebP length: ${webpData.length}, PNG length: ${pngData.length}`);
+              
+              // Check if WebP is actually different from PNG and has proper header
+              const isWebP = webpData.startsWith('data:image/webp') && 
+                            webpData.length > 100 && 
+                            webpData !== pngData;
+              
+              console.log(`📊 WebP validation: starts with webp: ${webpData.startsWith('data:image/webp')}, sufficient length: ${webpData.length > 100}, different from PNG: ${webpData !== pngData}`);
+              
+              return isWebP;
+            } catch (e) {
+              console.log('❌ WebP test with real data failed:', e);
+              return false;
+            }
+          };
+          
+          const basicSupport = hasWebPSupport();
+          const advancedSupport = testWithRealData();
+          
+          console.log(`📊 Basic WebP support: ${basicSupport}`);
+          console.log(`📊 Advanced WebP support: ${advancedSupport}`);
+          
+          const finalSupport = basicSupport && advancedSupport;
+          console.log(`✅ Final WebP support determination: ${finalSupport}`);
+          
+          resolve(finalSupport);
+        });
+      };
+
+      // Canvas-based export function for reliable format conversion
+      const exportViaCanvas = (targetFormat: string) => {
+        console.log(`🔄 Using canvas method for ${targetFormat.toUpperCase()} export...`);
+        
+        try {
+          // Get high-quality PNG data from Konva first
+          const pngDataURL = stageRef.current!.toDataURL({
+            pixelRatio: 2
+          });
+          
+          console.log(`📥 Got Konva data: ${pngDataURL.substring(0, 30)}...`);
+          
+          // Create image from Konva data
+          const img = new Image();
+          img.onload = () => {
+            console.log(`📸 Image loaded, converting to ${targetFormat}...`);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+              console.log('❌ Failed to get canvas context');
+              downloadFile(pngDataURL, targetFormat);
+              return;
+            }
+            
+            // Draw image to canvas
+            ctx.drawImage(img, 0, 0);
+            
+            try {
+              let convertedDataURL;
+              
+              if (targetFormat === 'jpeg') {
+                convertedDataURL = canvas.toDataURL('image/jpeg', jpegQuality);
+              } else if (targetFormat === 'webp') {
+                // Try WebP conversion with multiple quality levels
+                console.log(`🎯 Attempting WebP conversion with quality ${jpegQuality}...`);
+                convertedDataURL = canvas.toDataURL('image/webp', jpegQuality);
+                
+                // Verify WebP conversion actually worked
+                if (!convertedDataURL.startsWith('data:image/webp')) {
+                  console.log(`⚠️ WebP conversion failed, trying with different quality...`);
+                  convertedDataURL = canvas.toDataURL('image/webp', 0.8);
+                  
+                  if (!convertedDataURL.startsWith('data:image/webp')) {
+                    console.log(`❌ WebP conversion failed completely, browser doesn't support WebP canvas export`);
+                    downloadFile(pngDataURL, targetFormat);
+                    return;
+                  }
+                }
+              } else {
+                convertedDataURL = canvas.toDataURL('image/png');
+              }
+              
+              console.log(`🎯 Canvas ${targetFormat} result: ${convertedDataURL.substring(0, 30)}...`);
+              console.log(`📏 Result length: ${convertedDataURL.length} characters`);
+              
+              const actualFormat = getActualFormat(convertedDataURL);
+              if (actualFormat === targetFormat || (targetFormat === 'jpeg' && actualFormat === 'jpeg')) {
+                console.log(`✅ Canvas ${targetFormat} export successful!`);
+                downloadFile(convertedDataURL, targetFormat);
+              } else {
+                console.log(`❌ Canvas ${targetFormat} conversion failed, actual format: ${actualFormat}, falling back to PNG`);
+                downloadFile(pngDataURL, targetFormat);
+              }
+            } catch (canvasError) {
+              console.log(`❌ Canvas toDataURL error for ${targetFormat}:`, canvasError);
+              downloadFile(pngDataURL, targetFormat);
+            }
+          };
+          
+          img.onerror = () => {
+            console.log('❌ Image load failed');
+            const fallbackDataURL = stageRef.current!.toDataURL({
+              pixelRatio: 2
+            });
+            downloadFile(fallbackDataURL, targetFormat);
+          };
+          
+          img.src = pngDataURL;
+        } catch (error) {
+          console.log(`❌ Canvas export method failed for ${targetFormat}:`, error);
+          const fallbackDataURL = stageRef.current!.toDataURL({
+            pixelRatio: 2
+          });
+          downloadFile(fallbackDataURL, targetFormat);
+        }
+      };
+
+      if (exportFormat === 'png') {
+        // PNG is always supported via Konva directly
+        const dataURL = stageRef.current.toDataURL({
+          pixelRatio: 2
+        });
+        console.log(`📤 PNG export: ${dataURL.substring(0, 30)}...`);
+        downloadFile(dataURL, 'png');
+        
+      } else if (exportFormat === 'jpeg') {
+        // Use canvas method for reliable JPEG conversion
+        exportViaCanvas('jpeg');
+        
       } else if (exportFormat === 'webp') {
-        mimeType = 'image/webp';
-        quality = jpegQuality;
-      }
-      
-      const dataURL = stageRef.current.toDataURL({ 
-        mimeType,
-        quality,
-        pixelRatio: 2 
-      });
-      
-      if (onSave) {
-        onSave(dataURL);
-      } else {
-        const link = document.createElement('a');
-        link.download = `edited-image.${exportFormat}`;
-        link.href = dataURL;
-        link.click();
+        // Enhanced WebP support testing
+        testWebPSupport().then((supported) => {
+          if (supported) {
+            console.log('✅ WebP support confirmed, proceeding with conversion');
+            exportViaCanvas('webp');
+          } else {
+            console.log('❌ WebP not properly supported by this browser');
+            console.log('ℹ️ WebP issues are common even in professional software like Adobe Photoshop');
+            console.log('🔄 Falling back to PNG format');
+            
+            const dataURL = stageRef.current!.toDataURL({
+              pixelRatio: 2
+            });
+            downloadFile(dataURL, 'webp');
+          }
+        });
       }
     }
   };

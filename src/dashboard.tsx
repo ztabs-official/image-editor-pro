@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Button } from './components/ui/button';
-import { Separator } from './components/ui/separator';
 import { Progress } from './components/ui/progress';
 import ImageEditor from './components/ImageEditor';
 import Gallery from './components/Gallery';

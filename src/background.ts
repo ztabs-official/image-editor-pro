@@ -37,7 +37,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Handle messages from content script or popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'openEditor') {
     chrome.tabs.create({
       url: chrome.runtime.getURL('editor.html')

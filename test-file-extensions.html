@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Extension Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto;
+        }
+        .test-result { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            border-left: 4px solid;
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border-left-color: #28a745;
+        }
+        .warning { 
+            background: #fff3cd; 
+            color: #856404; 
+            border-left-color: #ffc107;
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border-left-color: #dc3545;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .download-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Extension Test</h1>
+    <p>This test verifies that downloaded files have the correct extensions based on their actual format.</p>
+    
+    <div class="download-section">
+        <h3>Test Canvas</h3>
+        <canvas id="testCanvas" width="300" height="200"></canvas>
+        <br>
+        <button onclick="testPNGExport()">Test PNG Export</button>
+        <button onclick="testJPEGExport()">Test JPEG Export</button>
+        <button onclick="testWebPExport()">Test WebP Export</button>
+        <button onclick="testAllFormats()">Test All Formats</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        let canvas, ctx;
+        
+        function init() {
+            canvas = document.getElementById('testCanvas');
+            ctx = canvas.getContext('2d');
+            createTestImage();
+        }
+        
+        function createTestImage() {
+            // Create a colorful test image
+            const gradient = ctx.createLinearGradient(0, 0, 300, 200);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#4ecdc4');
+            gradient.addColorStop(1, '#45b7d1');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 300, 200);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Test Image', 150, 100);
+            
+            ctx.fillStyle = '#000000';
+            ctx.font = '16px Arial';
+            ctx.fillText('Format Test', 150, 130);
+        }
+        
+        // Helper function to get actual format from dataURL
+        function getActualFormat(dataURL) {
+            if (dataURL.startsWith('data:image/webp')) return 'webp';
+            if (dataURL.startsWith('data:image/jpeg')) return 'jpeg';
+            if (dataURL.startsWith('data:image/jpg')) return 'jpg';
+            return 'png';
+        }
+        
+        // Helper function to download with correct extension
+        function downloadWithCorrectExtension(dataURL, requestedFormat) {
+            const actualFormat = getActualFormat(dataURL);
+            const fileExtension = actualFormat === 'jpeg' ? 'jpg' : actualFormat;
+            
+            const link = document.createElement('a');
+            link.download = `test-image.${fileExtension}`;
+            link.href = dataURL;
+            link.click();
+            
+            return { requested: requestedFormat, actual: actualFormat, extension: fileExtension };
+        }
+        
+        function showResult(message, type, details = '') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${message}</strong>${details ? '<br>' + details : ''}`;
+            results.appendChild(div);
+        }
+        
+        function testPNGExport() {
+            const dataURL = canvas.toDataURL('image/png');
+            const result = downloadWithCorrectExtension(dataURL, 'png');
+            
+            if (result.actual === 'png' && result.extension === 'png') {
+                showResult('✅ PNG Export Success', 'success', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            } else {
+                showResult('❌ PNG Export Failed', 'error', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            }
+        }
+        
+        function testJPEGExport() {
+            const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+            const result = downloadWithCorrectExtension(dataURL, 'jpeg');
+            
+            if (result.actual === 'jpeg' && result.extension === 'jpg') {
+                showResult('✅ JPEG Export Success', 'success', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            } else {
+                showResult('⚠️ JPEG Export Issue', 'warning', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            }
+        }
+        
+        function testWebPExport() {
+            const dataURL = canvas.toDataURL('image/webp', 0.8);
+            const result = downloadWithCorrectExtension(dataURL, 'webp');
+            
+            if (result.actual === 'webp' && result.extension === 'webp') {
+                showResult('✅ WebP Export Success', 'success', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            } else if (result.actual === 'png') {
+                showResult('⚠️ WebP Not Supported - Fallback to PNG', 'warning', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            } else {
+                showResult('❌ WebP Export Failed', 'error', 
+                    `Requested: ${result.requested}, Got: ${result.actual}, Extension: .${result.extension}`);
+            }
+        }
+        
+        function testAllFormats() {
+            showResult('🧪 Testing All Formats...', 'success');
+            
+            setTimeout(() => testPNGExport(), 100);
+            setTimeout(() => testJPEGExport(), 200);
+            setTimeout(() => testWebPExport(), 300);
+            
+            setTimeout(() => {
+                showResult('📊 Test Summary', 'success', 
+                    'Check your downloads folder for files with correct extensions:<br>' +
+                    '• test-image.png (PNG format)<br>' +
+                    '• test-image.jpg (JPEG format)<br>' +
+                    '• test-image.webp (WebP format, if supported)');
+            }, 500);
+        }
+        
+        // Initialize when page loads
+        window.onload = init;
+    </script>
+</body>
+</html> 

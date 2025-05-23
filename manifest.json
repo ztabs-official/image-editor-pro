@@ -2,7 +2,13 @@
   "manifest_version": 3,
   "name": "Image Editor Pro",
   "version": "1.0.0",
-  "description": "A beautiful and powerful image editor for Chrome with advanced editing capabilities",
+  "description": "A beautiful and powerful image editor for Chrome with advanced editing capabilities including filters, cropping, drawing tools, and more",
+  "icons": {
+    "16": "icons/icon16.svg",
+    "32": "icons/icon32.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  },
   "permissions": [
     "activeTab",
     "contextMenus",
@@ -15,7 +21,13 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Image Editor Pro"
+    "default_title": "Image Editor Pro - Professional image editing in your browser",
+    "default_icon": {
+      "16": "icons/icon16.svg",
+      "32": "icons/icon32.svg",
+      "48": "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    }
   },
   "background": {
     "service_worker": "background.js"
@@ -29,7 +41,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["editor.html", "dashboard.html"],
+      "resources": ["dashboard.html", "editor.html"],
       "matches": ["<all_urls>"]
     }
   ]

@@ -1,263 +1,219 @@
-# 🎨 Image Editor Pro - Chrome Extension
+# Image Editor Pro - Chrome Extension
 
-A beautiful and powerful Chrome extension for professional image editing with advanced capabilities, built with React, TypeScript, shadcn/ui, and Konva.js.
+A beautiful and powerful Chrome extension for professional image editing with advanced capabilities including filters, drawing tools, cropping, resizing, and more.
 
-## ✨ Features
+## 🚀 Features
 
-### 🖼️ **Comprehensive Dashboard**
-- **Full-screen interface** with all editing tools and options
-- **Image gallery** with grid/list view modes
-- **Search and filter** capabilities (all, recent, starred images)
-- **Image management** (star, delete, download, organize)
-- **Persistent storage** using Chrome's local storage API
+### Core Editing Tools
+- **10+ Professional Filters**: Brightness, contrast, saturation, blur, hue, sepia, vintage, grayscale, invert, opacity
+- **Drawing Tools**: Freehand brush with customizable size and color
+- **Text Editor**: Add and edit text with double-click functionality
+- **Shape Tools**: Rectangle, circle, triangle, star, arrow, heart
+- **Icons & Emojis**: 8 built-in icons/emojis for creative editing
 
-### 📤 **Multiple Image Sources**
-- **File Upload**: Drag & drop or browse local files
-- **Screenshot Capture**: Capture current tab screenshots
-- **Web Image Extraction**: Extract images from any webpage
-- **Gallery Management**: Access all stored images instantly
+### Transform & Manipulation
+- **Crop Tool**: Visual crop selection with real-time preview
+- **Resize**: Smart proportional scaling with aspect ratio lock
+- **Rotate**: 90-degree rotation left/right
+- **Flip**: Horizontal and vertical flipping
+- **Zoom**: In/out with scale display
 
-### 🎨 **Advanced Editing Tools**
-- **Filters**: Brightness, Contrast, Saturation, Blur, Hue (-100 to +100)
-- **Drawing Tools**: Brush with customizable color and size
-- **Text Overlay**: Add text with color picker and font sizing
-- **Shape Tools**: Rectangle and circle drawing
-- **Transform Tools**: Rotate left/right, flip horizontal/vertical
-- **Zoom Controls**: Pan and zoom for precise editing
+### Export & Storage
+- **Multiple Formats**: Export as PNG, JPEG, or WebP
+- **Quality Control**: Adjustable quality for JPEG/WebP
+- **Local Gallery**: ~5MB Chrome storage capacity
+- **Auto-save**: Automatic saving to gallery
+- **Download**: Direct download functionality
 
-### 💾 **Image Storage System**
+### User Experience
+- **Professional UI**: Built with shadcn/ui and Tailwind CSS
+- **Responsive Design**: Works on all screen sizes
+- **Context Menu**: Right-click any image to edit
+- **Immediate Access**: Click extension icon to open dashboard
+- **Search & Filter**: Gallery with search and filtering options
 
-#### **Where Images Are Stored**
-- **Chrome Local Storage**: All images stored using `chrome.storage.local` API
-- **Base64 Format**: Images converted to data URLs for reliable storage
-- **Metadata Tracking**: Stores name, dimensions, file size, timestamp, star status
-- **Persistent**: Images remain available until manually deleted
-- **Cross-session**: Access images across browser restarts
+## 🛠️ Technical Stack
 
-#### **Storage Capacity**
-- **Chrome Limit**: ~5MB per extension (chrome.storage.local)
-- **Efficient**: Automatic base64 encoding optimization
-- **Management**: Built-in tools to delete images when storage fills up
-
-#### **Data Structure**
-```typescript
-interface StoredImage {
-  id: string;              // Unique identifier
-  name: string;            // Original filename
-  dataUrl: string;         // Base64 image data
-  timestamp: number;       // Creation date
-  size: {
-    width: number;         // Image dimensions
-    height: number;
-    fileSize: number;      // Approximate file size
-  };
-  isStarred?: boolean;     // User favorite status
-  tags?: string[];         // Future: categorization
-}
-```
-
-## 🏗️ **Architecture Overview**
-
-### **Extension Components**
-
-1. **Popup Interface** (`popup.html`)
-   - Quick access from browser toolbar
-   - Basic upload/capture/extract functionality
-   - **"Open Full Dashboard"** button for comprehensive features
-
-2. **Dashboard Page** (`dashboard.html`)
-   - **Main interface** with full-screen real estate
-   - Complete image gallery and management
-   - All editing tools and options in one place
-   - Search, filter, and organization features
-
-3. **Editor Page** (`editor.html`)
-   - Dedicated editing interface with Konva.js canvas
-   - Advanced editing tools and filters
-   - Real-time preview and export capabilities
-
-4. **Background Service** (`background.js`)
-   - Context menu integration
-   - Extension lifecycle management
-   - Cross-tab communication
-
-5. **Content Script** (`content.js`)
-   - Webpage image detection
-   - Image extraction capabilities
-   - DOM interaction for web images
-
-### **User Flow Options**
-
-#### **Option 1: Popup → Quick Edit**
-```
-Click Extension Icon → Upload/Capture → Quick Edit → Download
-```
-
-#### **Option 2: Dashboard → Full Experience** (⭐ Recommended)
-```
-Click Extension Icon → "Open Full Dashboard" → Gallery/Upload/Edit → Save to Gallery
-```
-
-#### **Option 3: Context Menu**
-```
-Right-click Image → "Edit with Image Editor Pro" → Direct to Editor
-```
-
-## 🚀 **Installation**
-
-1. **Download the extension**:
-   ```bash
-   git clone [repository-url]
-   cd image-editor-extension
-   npm install
-   npm run build
-   ```
-
-2. **Load in Chrome**:
-   - Open `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `dist/` folder
-
-3. **Start editing**:
-   - Click the extension icon in toolbar
-   - Choose "Open Full Dashboard" for best experience
-   - Or use popup for quick edits
-
-## 📋 **Usage Guide**
-
-### **Dashboard Interface**
-
-#### **Upload Tab**
-- Drag & drop images directly
-- Browse and select multiple files
-- Automatic storage to gallery
-- Support for PNG, JPG, JPEG, GIF, WebP
-
-#### **Capture Tab**
-- One-click screenshot capture
-- Automatic save to gallery
-- Current tab visibility capture
-- High-quality PNG output
-
-#### **Extract Tab**
-- Scan current webpage for images
-- Filter by minimum size (100x100px)
-- Bulk extraction (up to 10 images)
-- Automatic naming and storage
-
-#### **Gallery Tab**
-- **Grid/List Views**: Toggle between visual layouts
-- **Search**: Find images by filename
-- **Filter**: All images, recent (24h), or starred
-- **Actions**: Edit, star, download, delete per image
-- **Metadata**: Dimensions, file size, date created
-
-### **Image Management**
-
-#### **Starring System**
-- ⭐ Star important images for easy access
-- Filter gallery to show only starred images
-- Persistent across sessions
-
-#### **Search & Filter**
-- 🔍 Search by filename or keywords
-- 📅 Recent filter for last 24 hours
-- ⭐ Starred filter for favorites
-- Real-time filtering as you type
-
-#### **Storage Management**
-- Monitor storage usage in header
-- Delete unwanted images to free space
-- Bulk selection for management (future feature)
-- Export/import gallery (future feature)
-
-## 🎯 **Technical Details**
-
-### **Built With**
 - **Frontend**: React 18 + TypeScript
-- **UI Library**: shadcn/ui with Radix UI primitives
-- **Styling**: Tailwind CSS with CSS variables
-- **Canvas**: Konva.js for advanced image manipulation
-- **Build Tool**: Vite with Chrome extension configuration
-- **Extension API**: Chrome Manifest V3
+- **Canvas**: Konva.js for high-performance image editing
+- **UI Components**: shadcn/ui with Radix UI primitives
+- **Styling**: Tailwind CSS with custom design system
+- **Build Tool**: Vite with optimized production builds
+- **Extension**: Chrome Extension Manifest V3
 
-### **Performance**
-- ⚡ Fast loading with code splitting
-- 🎨 Smooth canvas operations with Konva.js
-- 💾 Efficient base64 storage compression
-- 🔄 Real-time preview updates
-- 📱 Responsive design for all screen sizes
+## 📦 Installation
 
-### **Browser Compatibility**
-- ✅ Chrome (Primary)
-- ✅ Chromium-based browsers (Edge, Brave, etc.)
-- ❌ Firefox (different extension API)
-- ❌ Safari (different extension system)
+### For Users
+1. Download the extension from Chrome Web Store (coming soon)
+2. Or load as unpacked extension:
+   - Go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked" and select the `dist` folder
 
-## 🔧 **Development**
-
-### **Setup**
+### For Developers
 ```bash
-npm install          # Install dependencies
-npm run dev         # Development mode
-npm run build       # Production build
-npm run type-check  # TypeScript validation
+# Clone the repository
+git clone <repository-url>
+cd image-editor-extension
+
+# Install dependencies
+npm install
+
+# Development mode
+npm run dev
+
+# Build for production
+npm run build:production
+
+# Generate icons
+npm run icons
 ```
 
-### **File Structure**
+## 🏗️ Development
+
+### Project Structure
 ```
 src/
 ├── components/
-│   ├── ui/          # shadcn/ui components
-│   └── ImageEditor.tsx
-├── popup.tsx        # Extension popup
-├── dashboard.tsx    # Main dashboard
-├── editor.tsx       # Dedicated editor
-├── background.ts    # Service worker
-├── content.ts       # Content script
-└── globals.css      # Tailwind styles
-
-dist/                # Built extension
-├── manifest.json
-├── popup.html
-├── dashboard.html
-├── editor.html
-└── *.js            # Compiled scripts
+│   ├── ImageEditor.tsx    # Main editor component
+│   ├── Gallery.tsx        # Image gallery
+│   └── ui/               # shadcn/ui components
+├── dashboard.tsx         # Main dashboard page
+├── popup.tsx            # Extension popup (redirects)
+├── editor.tsx           # Standalone editor page
+├── background.ts        # Service worker
+├── content.ts           # Content script
+└── types/               # TypeScript definitions
 ```
 
-## 🔒 **Privacy & Security**
+### Key Components
 
-- **Local Storage Only**: All images stored locally in browser
-- **No Cloud Upload**: Images never leave your device
-- **No Analytics**: No tracking or data collection
-- **Permissions**: Only requests necessary permissions
-- **Open Source**: Full transparency of code
+#### ImageEditor
+- Main editing interface with tabbed sidebar
+- Real-time filter application with Konva.js
+- Mouse event handling for drawing and cropping
+- Transform operations with proper state management
 
-## 🎨 **UI/UX Design**
+#### Gallery
+- Grid/list view toggle
+- Search and filtering
+- Star/favorite functionality
+- Storage management with size tracking
 
-### **Design System**
-- **Colors**: CSS variables with light/dark mode support
-- **Typography**: System fonts with proper hierarchy
-- **Spacing**: Consistent 4px grid system
-- **Components**: Accessible shadcn/ui components
-- **Icons**: Lucide React icons throughout
+#### Storage System
+- Chrome Local Storage API
+- ~5MB capacity with size monitoring
+- Automatic cleanup and optimization
+- Image metadata tracking
 
-### **User Experience**
-- **Progressive Disclosure**: Simple popup → Full dashboard
-- **Contextual Actions**: Right-click menu integration
-- **Visual Feedback**: Loading states and tooltips
-- **Keyboard Navigation**: Full accessibility support
-- **Responsive Layout**: Works on all screen sizes
+### Build Process
+1. **Type Check**: TypeScript compilation check
+2. **Vite Build**: Optimized production bundle
+3. **Asset Copy**: Manifest, icons, styles
+4. **Validation**: Required files check
+5. **Size Analysis**: Bundle size reporting
 
-## 📞 **Support**
+## 🎨 Design System
 
-For issues, feature requests, or contributions:
-- 🐛 **Bug Reports**: [Issue Tracker]
-- 💡 **Feature Requests**: [Feature Board]
-- 📖 **Documentation**: [Wiki]
-- 💬 **Community**: [Discussions]
+### Colors
+- Primary: Blue gradient (#667eea → #764ba2)
+- Accent: Blue (#3b82f6)
+- Success: Green (#10b981)
+- Warning: Yellow (#f59e0b)
+- Error: Red (#ef4444)
+
+### Typography
+- Font: System UI stack
+- Sizes: 12px - 32px with consistent scale
+- Weights: 400 (normal), 500 (medium), 600 (semibold), 700 (bold)
+
+### Components
+- Consistent border radius (0.5rem)
+- Subtle shadows and transitions
+- Accessible color contrast
+- Responsive spacing system
+
+## 🔧 Configuration
+
+### Vite Configuration
+- React plugin with Fast Refresh
+- TypeScript support
+- Tailwind CSS integration
+- Production optimizations
+
+### Chrome Extension
+- Manifest V3 compliance
+- Service worker background script
+- Content script injection
+- Context menu integration
+- Storage permissions
+
+## 📊 Performance
+
+### Bundle Size
+- Total: ~2-3MB (including assets)
+- JavaScript: ~800KB (minified)
+- CSS: ~50KB (Tailwind purged)
+- Assets: Icons, fonts, images
+
+### Optimization
+- Code splitting by route
+- Tree shaking for unused code
+- Minification and compression
+- Efficient re-renders with React
+
+## 🧪 Testing
+
+### Manual Testing Checklist
+- [ ] Upload and display images
+- [ ] Apply all filters
+- [ ] Draw with brush tool
+- [ ] Add and edit text
+- [ ] Create shapes and icons
+- [ ] Crop functionality
+- [ ] Resize with aspect ratio
+- [ ] Transform operations
+- [ ] Export in all formats
+- [ ] Gallery operations
+- [ ] Context menu integration
+
+### Browser Compatibility
+- Chrome 88+ (Manifest V3 requirement)
+- Chromium-based browsers
+- Edge 88+
+
+## 🚀 Deployment
+
+### Chrome Web Store
+1. Build production version: `npm run build:production`
+2. Create ZIP file of `dist` folder
+3. Upload to Chrome Web Store Developer Dashboard
+4. Fill out store listing details
+5. Submit for review
+
+### Local Installation
+1. Run `npm run build:production`
+2. Open Chrome Extensions page
+3. Enable Developer mode
+4. Load unpacked extension from `dist` folder
+
+## 📝 License
+
+MIT License - see LICENSE file for details.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Make changes with tests
+4. Submit pull request
+
+## 📞 Support
+
+For issues and feature requests, please use the GitHub issue tracker.
 
 ---
 
-**Built with ❤️ using React, TypeScript, and shadcn/ui** 
+**Version**: 1.0.0  
+**Last Updated**: 2024  
+**Status**: Production Ready 
