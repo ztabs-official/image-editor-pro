@@ -725,8 +725,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
 
   const downloadEditedImage = () => {
     if (stageRef.current) {
-      console.log(`🔍 Attempting ${exportFormat.toUpperCase()} export...`);
-      
       // Helper function to get actual format from dataURL
       const getActualFormat = (dataURL: string): string => {
         if (dataURL.startsWith('data:image/webp')) return 'webp';
@@ -739,9 +737,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       const downloadFile = (dataURL: string, requestedFormat: string) => {
         const actualFormat = getActualFormat(dataURL);
         const fileExtension = actualFormat === 'jpeg' ? 'jpg' : actualFormat;
-        
-        console.log(`📤 Export result: Requested ${requestedFormat}, got ${actualFormat}`);
-        console.log(`📁 File extension: .${fileExtension}`);
         
         if (onSave) {
           // Create a custom download with correct extension even when onSave is provided
@@ -768,8 +763,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
       // Enhanced WebP support detection - multiple methods
       const testWebPSupport = (): Promise<boolean> => {
         return new Promise((resolve) => {
-          console.log('🧪 Testing WebP support with multiple methods...');
-          
           // Method 1: Feature detection
           const hasWebPSupport = () => {
             const canvas = document.createElement('canvas');
@@ -811,19 +804,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
               const webpData = canvas.toDataURL('image/webp', 0.9);
               const pngData = canvas.toDataURL('image/png');
               
-              console.log(`📊 WebP test data: ${webpData.substring(0, 40)}...`);
-              console.log(`📊 WebP length: ${webpData.length}, PNG length: ${pngData.length}`);
-              
               // Check if WebP is actually different from PNG and has proper header
               const isWebP = webpData.startsWith('data:image/webp') && 
                             webpData.length > 100 && 
                             webpData !== pngData;
               
-              console.log(`📊 WebP validation: starts with webp: ${webpData.startsWith('data:image/webp')}, sufficient length: ${webpData.length > 100}, different from PNG: ${webpData !== pngData}`);
-              
               return isWebP;
             } catch (e) {
-              console.log('❌ WebP test with real data failed:', e);
               return false;
             }
           };
@@ -831,11 +818,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
           const basicSupport = hasWebPSupport();
           const advancedSupport = testWithRealData();
           
-          console.log(`📊 Basic WebP support: ${basicSupport}`);
-          console.log(`📊 Advanced WebP support: ${advancedSupport}`);
-          
           const finalSupport = basicSupport && advancedSupport;
-          console.log(`✅ Final WebP support determination: ${finalSupport}`);
           
           resolve(finalSupport);
         });
@@ -843,28 +826,21 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
 
       // Canvas-based export function for reliable format conversion
       const exportViaCanvas = (targetFormat: string) => {
-        console.log(`🔄 Using canvas method for ${targetFormat.toUpperCase()} export...`);
-        
         try {
           // Get high-quality PNG data from Konva first
           const pngDataURL = stageRef.current!.toDataURL({
             pixelRatio: 2
           });
           
-          console.log(`📥 Got Konva data: ${pngDataURL.substring(0, 30)}...`);
-          
           // Create image from Konva data
           const img = new Image();
           img.onload = () => {
-            console.log(`📸 Image loaded, converting to ${targetFormat}...`);
-            
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
             
             if (!ctx) {
-              console.log('❌ Failed to get canvas context');
               downloadFile(pngDataURL, targetFormat);
               return;
             }
@@ -879,16 +855,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
                 convertedDataURL = canvas.toDataURL('image/jpeg', jpegQuality);
               } else if (targetFormat === 'webp') {
                 // Try WebP conversion with multiple quality levels
-                console.log(`🎯 Attempting WebP conversion with quality ${jpegQuality}...`);
                 convertedDataURL = canvas.toDataURL('image/webp', jpegQuality);
                 
                 // Verify WebP conversion actually worked
                 if (!convertedDataURL.startsWith('data:image/webp')) {
-                  console.log(`⚠️ WebP conversion failed, trying with different quality...`);
                   convertedDataURL = canvas.toDataURL('image/webp', 0.8);
                   
                   if (!convertedDataURL.startsWith('data:image/webp')) {
-                    console.log(`❌ WebP conversion failed completely, browser doesn't support WebP canvas export`);
                     downloadFile(pngDataURL, targetFormat);
                     return;
                   }
@@ -897,25 +870,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
                 convertedDataURL = canvas.toDataURL('image/png');
               }
               
-              console.log(`🎯 Canvas ${targetFormat} result: ${convertedDataURL.substring(0, 30)}...`);
-              console.log(`📏 Result length: ${convertedDataURL.length} characters`);
-              
               const actualFormat = getActualFormat(convertedDataURL);
               if (actualFormat === targetFormat || (targetFormat === 'jpeg' && actualFormat === 'jpeg')) {
-                console.log(`✅ Canvas ${targetFormat} export successful!`);
                 downloadFile(convertedDataURL, targetFormat);
               } else {
-                console.log(`❌ Canvas ${targetFormat} conversion failed, actual format: ${actualFormat}, falling back to PNG`);
                 downloadFile(pngDataURL, targetFormat);
               }
             } catch (canvasError) {
-              console.log(`❌ Canvas toDataURL error for ${targetFormat}:`, canvasError);
               downloadFile(pngDataURL, targetFormat);
             }
           };
           
           img.onerror = () => {
-            console.log('❌ Image load failed');
             const fallbackDataURL = stageRef.current!.toDataURL({
               pixelRatio: 2
             });
@@ -924,7 +890,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
           
           img.src = pngDataURL;
         } catch (error) {
-          console.log(`❌ Canvas export method failed for ${targetFormat}:`, error);
           const fallbackDataURL = stageRef.current!.toDataURL({
             pixelRatio: 2
           });
@@ -937,7 +902,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         const dataURL = stageRef.current.toDataURL({
           pixelRatio: 2
         });
-        console.log(`📤 PNG export: ${dataURL.substring(0, 30)}...`);
         downloadFile(dataURL, 'png');
         
       } else if (exportFormat === 'jpeg') {
@@ -948,13 +912,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onSave }) => {
         // Enhanced WebP support testing
         testWebPSupport().then((supported) => {
           if (supported) {
-            console.log('✅ WebP support confirmed, proceeding with conversion');
             exportViaCanvas('webp');
           } else {
-            console.log('❌ WebP not properly supported by this browser');
-            console.log('ℹ️ WebP issues are common even in professional software like Adobe Photoshop');
-            console.log('🔄 Falling back to PNG format');
-            
             const dataURL = stageRef.current!.toDataURL({
               pixelRatio: 2
             });
