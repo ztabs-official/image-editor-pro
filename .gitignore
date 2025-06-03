@@ -1,3 +1,7 @@
 node_modules
 dist
 *.zip
+
+# macOS system files
+.DS_Store
+**/.DS_Store

@@ -15,7 +15,7 @@ async function buildExtension() {
     fs.copyFileSync('manifest.json', 'dist/manifest.json');
     console.log('✅ Copied manifest.json');
 
-    // Copy icons directory (SVG icons work fine for Chrome extensions)
+    // Copy icons directory (PNG icons are required for Chrome extensions)
     if (fs.existsSync('icons')) {
       if (!fs.existsSync('dist/icons')) {
         fs.mkdirSync('dist/icons', { recursive: true });
@@ -59,7 +59,7 @@ Right-click on any image on a webpage to edit it directly.
 - Local storage for image gallery
 - Professional-grade image editing capabilities
 
-## Version: 1.0.0
+## Version: 1.0.1
 Ready for Chrome Web Store submission.
 `;
 
@@ -105,11 +105,11 @@ Ready for Chrome Web Store submission.
     console.log('\n🎨 Icon files check:');
     const iconSizes = [16, 32, 48, 128];
     iconSizes.forEach(size => {
-      const iconPath = `dist/icons/icon${size}.svg`;
+      const iconPath = `dist/icons/icon${size}.png`;
       if (fs.existsSync(iconPath)) {
-        console.log(`✅ icon${size}.svg`);
+        console.log(`✅ icon${size}.png`);
       } else {
-        console.log(`⚠️  icon${size}.svg - Missing`);
+        console.log(`⚠️  icon${size}.png - Missing`);
       }
     });
 
