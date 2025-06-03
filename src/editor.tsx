@@ -21,9 +21,9 @@ const EditorApp: React.FC = () => {
 
   useEffect(() => {
     // Get the image ID from Chrome storage and load the image
-    chrome.storage.local.get(['currentImageId'], async (result) => {
+    chrome.storage.local.get(['currentImageId', 'currentImage'], async (result) => {
       if (result.currentImageId) {
-        // Load the image from the gallery
+        // Load the image from the gallery (new flow)
         const imagesResult = await chrome.storage.local.get(['images']);
         const images: StoredImage[] = imagesResult.images || [];
         const currentImage = images.find(img => img.id === result.currentImageId);
@@ -32,6 +32,44 @@ const EditorApp: React.FC = () => {
           setImageSrc(currentImage.dataUrl);
           setImageName(currentImage.name);
         }
+      } else if (result.currentImage) {
+        // Handle legacy format (fallback)
+        const imageUrl = result.currentImage;
+        
+        if (imageUrl.startsWith('data:')) {
+          // It's already a data URL
+          setImageSrc(imageUrl);
+          setImageName('External_Image.jpg');
+        } else {
+          // It's a URL, we need to download it
+          try {
+            const response = await fetch(imageUrl);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+              setImageSrc(dataUrl);
+              
+              // Extract filename from URL
+              try {
+                const url = new URL(imageUrl);
+                const pathname = url.pathname;
+                const filename = pathname.split('/').pop() || 'image';
+                const imageName = filename.includes('.') ? filename : `${filename}.jpg`;
+                setImageName(imageName);
+              } catch {
+                setImageName('External_Image.jpg');
+              }
+            };
+            reader.readAsDataURL(blob);
+          } catch (error) {
+            console.error('Error loading external image:', error);
+            setImageName('External_Image.jpg');
+          }
+        }
+        
+        // Clear the legacy currentImage after loading
+        chrome.storage.local.set({ currentImage: undefined });
       }
       setIsLoading(false);
     });
